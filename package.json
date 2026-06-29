@@ -1,0 +1,29 @@
+{
+  "name": "image-downloader",
+  "version": "1.0.0",
+  "description": "Production-ready web app to extract, preview, select, and download images from a website URL.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "image-downloader",
+    "express",
+    "scraper",
+    "zip"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {}
+}

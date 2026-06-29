@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: image-downloader
+    env: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production

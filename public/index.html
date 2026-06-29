@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Image Downloader</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="tool-panel" aria-labelledby="app-title">
+        <div class="intro">
+          <p class="eyebrow">Image Downloader</p>
+          <h1 id="app-title">Extract and download images from any public page.</h1>
+        </div>
+
+        <form id="url-form" class="search-form" novalidate>
+          <label for="url-input">Website URL</label>
+          <div class="input-row">
+            <input id="url-input" name="url" type="url" placeholder="https://example.com" autocomplete="url" required>
+            <button type="submit" id="fetch-button">Fetch Images</button>
+          </div>
+          <p id="form-error" class="form-error" role="alert"></p>
+        </form>
+
+        <div id="status" class="status" aria-live="polite" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="status-copy">
+            <span id="status-text">Fetching page...</span>
+            <div class="progress-track" aria-hidden="true">
+              <span id="progress-bar"></span>
+            </div>
+          </div>
+        </div>
+
+        <section id="results" class="results" hidden>
+          <div class="results-bar">
+            <div>
+              <p id="result-count" class="result-count">0 images found</p>
+              <p id="selected-count" class="selected-count">0 selected</p>
+            </div>
+            <div class="actions">
+              <button type="button" id="select-all" class="secondary">Select All</button>
+              <button type="button" id="clear-selection" class="secondary">Clear</button>
+              <button type="button" id="download-zip" class="primary">Download ZIP</button>
+            </div>
+          </div>
+          <div id="gallery" class="gallery" aria-label="Extracted image gallery"></div>
+        </section>
+
+        <section id="empty-state" class="empty-state">
+          <h2>No images loaded yet</h2>
+          <p>Enter a public website URL to preview extracted images, GIFs, lazy-loaded URLs, srcsets, and background images.</p>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>
