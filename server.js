@@ -28,18 +28,19 @@ app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan('combined'));
 
-app.use(rateLimit({
+const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 120,
+  max: 80,
   standardHeaders: true,
-  legacyHeaders: false
-}));
+  legacyHeaders: false,
+  skip: (req) => req.path.startsWith('/preview')
+});
 
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0
 }));
 
-app.use('/api', imageRoutes);
+app.use('/api', apiLimiter, imageRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found.' });

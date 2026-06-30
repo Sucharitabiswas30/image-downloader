@@ -15,6 +15,8 @@ const downloadZipButton = document.querySelector('#download-zip');
 
 let images = [];
 const selected = new Set();
+const EXTRACT_TIMEOUT_MS = 45000;
+const ZIP_TIMEOUT_MS = 120000;
 
 function setLoading(isLoading, message = 'Fetching page...') {
   statusBox.hidden = !isLoading;
@@ -34,6 +36,23 @@ function validateUrl(value) {
   } catch {
     return false;
   }
+}
+
+function createTimeoutSignal(timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  return {
+    signal: controller.signal,
+    clear: () => window.clearTimeout(timeoutId)
+  };
+}
+
+function getFriendlyError(error, fallbackMessage) {
+  if (error.name === 'AbortError') {
+    return 'This request took too long and was stopped. Try a smaller page or another URL.';
+  }
+
+  return error.message || fallbackMessage;
 }
 
 function updateSelectionUi() {
@@ -128,18 +147,25 @@ function renderImages(nextImages) {
 }
 
 async function extractImages(url) {
-  const response = await fetch('/api/extract', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url })
-  });
+  const timeout = createTimeoutSignal(EXTRACT_TIMEOUT_MS);
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.error || 'Unable to extract images.');
+  try {
+    const response = await fetch('/api/extract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+      signal: timeout.signal
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || 'Unable to extract images.');
+    }
+
+    return payload.images || [];
+  } finally {
+    timeout.clear();
   }
-
-  return payload.images || [];
 }
 
 async function downloadZip() {
@@ -151,12 +177,14 @@ async function downloadZip() {
 
   setError('');
   setLoading(true, 'Creating ZIP...');
+  const timeout = createTimeoutSignal(ZIP_TIMEOUT_MS);
 
   try {
     const response = await fetch('/api/zip', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ images: selectedImages })
+      body: JSON.stringify({ images: selectedImages }),
+      signal: timeout.signal
     });
 
     if (!response.ok) {
@@ -177,8 +205,9 @@ async function downloadZip() {
     link.remove();
     URL.revokeObjectURL(url);
   } catch (error) {
-    setError(error.message);
+    setError(getFriendlyError(error, 'Unable to create ZIP.'));
   } finally {
+    timeout.clear();
     setLoading(false);
   }
 }
@@ -203,7 +232,7 @@ form.addEventListener('submit', async (event) => {
     }
   } catch (error) {
     renderImages([]);
-    setError(error.message);
+    setError(getFriendlyError(error, 'Unable to extract images.'));
   } finally {
     setLoading(false);
   }

@@ -7,6 +7,7 @@ const { Transform } = require('stream');
 const { URL } = require('url');
 
 const REQUEST_TIMEOUT_MS = 12000;
+const DNS_TIMEOUT_MS = 5000;
 const MAX_HTML_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
 const MAX_RESULTS = 500;
@@ -31,6 +32,15 @@ function createHttpError(message, status = 400) {
   const error = new Error(message);
   error.status = status;
   return error;
+}
+
+function withTimeout(promise, timeoutMs, message) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(createHttpError(message, 504)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 }
 
 function isPrivateIp(address) {
@@ -81,7 +91,11 @@ async function validatePublicUrl(rawUrl) {
     throw createHttpError('The URL format is not supported.');
   }
 
-  const records = await dns.lookup(parsed.hostname, { all: true });
+  const records = await withTimeout(
+    dns.lookup(parsed.hostname, { all: true }),
+    DNS_TIMEOUT_MS,
+    'Timed out while checking the website address. Try again or use a different URL.'
+  );
   if (!records.length || records.some((record) => isPrivateIp(record.address))) {
     throw createHttpError('Private, local, and internal network URLs are not allowed.', 403);
   }
